@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  AWSAccountId:
+    Type: String
+  AWSRegion:
+    Type: String
+  LambdaExecutionRole:
+    Type: String
+  SourceCodeS3Bucket:
+    Type: String
+  GetHashSourceKey:
+    Type: String
+  GetHashesSourceKey:
+    Type: String
+  GetChangesSourceKey:
+    Type: String
+
+Resources:
+  getHash:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: getHash
+      Handler: getHash.handler
+      Runtime: python3.6
+      Timeout: 10
+      Role:
+        Ref: LambdaExecutionRole
+      Code:
+        S3Bucket:
+          Ref: SourceCodeS3Bucket
+        S3Key:
+          Ref: GetHashSourceKey
+
+  getHashes:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: getHashes
+      Handler: getHashes.handler
+      Runtime: python3.6
+      Timeout: 10
+      Role:
+        Ref: LambdaExecutionRole
+      Code:
+        S3Bucket:
+          Ref: SourceCodeS3Bucket
+        S3Key:
+          Ref: GetHashesSourceKey
+
+  getChanges:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: getChanges
+      Handler: getChanges.handler
+      Runtime: python3.6
+      Timeout: 10
+      Role:
+        Ref: LambdaExecutionRole
+      Code:
+        S3Bucket:
+          Ref: SourceCodeS3Bucket
+        S3Key:
+          Ref: GetChangesSourceKey
+
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: manifest
+      Description: Rest API for interacting with the bungie.net Destiny Companion App SQLite manifest
+
+  ApiRootResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+          - RestApi
+          - RootResourceId
+      RestApiId:
+        Ref: RestApi
+      PathPart: manifest
+  
+  ApiChangesResource:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        RestApiId:
+          Ref: RestApi
+        ParentId:
+          Ref: ApiRootResource
+        PathPart: changes
+  
+  ApiHashesResource:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId:
+          Ref: ApiRootResource
+        RestApiId:
+          Ref: RestApi
+        PathPart: hashes
+
+  ApiHashResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+          ParentId:
+            Ref: ApiRootResource
+          RestApiId:
+            Ref: RestApi
+          PathPart: hash
+
+  ApiRootMethod1:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: RestApi
+      ResourceId:
+        Ref: ApiChangesResource
+      ApiKeyRequired: False
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+          -
+            StatusCode: 200
+        Uri:
+          Fn::Join:
+            - ''
+            - - "arn:aws:apigateway:"
+              - !Ref AWSRegion
+              - ":lambda:path/2015-03-31/functions/arn:aws:lambda:"
+              - !Ref AWSRegion
+              - ":"
+              - !Ref AWSAccountId
+              - ":function:getChanges/invocations"
+      MethodResponses:
+        -
+          StatusCode: 200
+      OperationName: getChanges
+
+  ApiRootMethod2:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: RestApi
+      ResourceId:
+        Ref: ApiHashesResource
+      ApiKeyRequired: False
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        RequestTemplates:
+          application/json:
+            "{\"manifest_id\":\"$input.params('manifest_id')\",\"table_name\":\"$input.params('table_name')\",\"action\":\"$input.params('action')\"}"
+        IntegrationResponses:
+          -
+            StatusCode: 200
+        Uri:
+          Fn::Join:
+            - ''
+            - - "arn:aws:apigateway:"
+              - !Ref AWSRegion
+              - ":lambda:path/2015-03-31/functions/arn:aws:lambda:"
+              - !Ref AWSRegion
+              - ":"
+              - !Ref AWSAccountId
+              - ":function:getChanges/invocations"
+      MethodResponses:
+        -
+          StatusCode: 200
+      OperationName: getHashes
+      RequestParameters:
+        method.request.querystring.manifest_id: True
+        method.request.querystring.table_name: True
+        method.request.querystring.action: True
+
+  ApiRootMethod3:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId:
+        Ref: RestApi
+      ResourceId:
+        Ref: ApiHashResource
+      ApiKeyRequired: False
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        RequestTemplates:
+          application/json:
+            "{\"table_name\":\"$input.params('table_name')\",\"hash\":\"$input.params('hash')\"}"
+        IntegrationResponses:
+          -
+            StatusCode: 200
+        Uri:
+          Fn::Join:
+            - ''
+            - - "arn:aws:apigateway:"
+              - !Ref AWSRegion
+              - ":lambda:path/2015-03-31/functions/arn:aws:lambda:"
+              - !Ref AWSRegion
+              - ":"
+              - !Ref AWSAccountId
+              - ":function:getChanges/invocations"
+      MethodResponses:
+        -
+          StatusCode: 200
+      OperationName: getHash
+      RequestParameters:
+        method.request.querystring.table_name: True
+        method.request.querystring.hash: True
+
+  getHashInvokePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - getHash
+          - Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  getChangesInvokePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - getChanges
+          - Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  getHashesInvokePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+          - getHashes
+          - Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  RestApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ApiRootMethod1
+      - ApiRootMethod2
+      - ApiRootMethod3
+    Properties:
+      StageName: stage
+      RestApiId:
+        Ref: RestApi
