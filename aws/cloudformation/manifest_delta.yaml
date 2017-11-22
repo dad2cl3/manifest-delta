@@ -119,7 +119,10 @@ Resources:
         Type: AWS
         IntegrationHttpMethod: POST
         IntegrationResponses:
-          -
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
             StatusCode: 200
         Uri:
           Fn::Join:
@@ -133,8 +136,38 @@ Resources:
               - ":function:getChanges/invocations"
       MethodResponses:
         -
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
           StatusCode: 200
       OperationName: getChanges
+  
+  ApiGetChangesCORSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ResourceId:
+        Ref: ApiChangesResource
+      RestApiId:
+        Ref: RestApi
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            StatusCode: 200
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
 
   ApiRootMethod2:
     Type: AWS::ApiGateway::Method
@@ -153,7 +186,10 @@ Resources:
           application/json:
             "{\"manifest_id\":\"$input.params('manifest_id')\",\"table_name\":\"$input.params('table_name')\",\"action\":\"$input.params('action')\"}"
         IntegrationResponses:
-          -
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
             StatusCode: 200
         Uri:
           Fn::Join:
@@ -164,15 +200,45 @@ Resources:
               - !Ref AWSRegion
               - ":"
               - !Ref AWSAccountId
-              - ":function:getChanges/invocations"
+              - ":function:getHashes/invocations"
       MethodResponses:
         -
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
           StatusCode: 200
       OperationName: getHashes
       RequestParameters:
         method.request.querystring.manifest_id: True
         method.request.querystring.table_name: True
         method.request.querystring.action: True
+
+  ApiGetHashesCORSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ResourceId:
+        Ref: ApiHashesResource
+      RestApiId:
+        Ref: RestApi
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            StatusCode: 200
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
 
   ApiRootMethod3:
     Type: AWS::ApiGateway::Method
@@ -191,7 +257,10 @@ Resources:
           application/json:
             "{\"table_name\":\"$input.params('table_name')\",\"hash\":\"$input.params('hash')\"}"
         IntegrationResponses:
-          -
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
             StatusCode: 200
         Uri:
           Fn::Join:
@@ -202,14 +271,44 @@ Resources:
               - !Ref AWSRegion
               - ":"
               - !Ref AWSAccountId
-              - ":function:getChanges/invocations"
+              - ":function:getHash/invocations"
       MethodResponses:
         -
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
           StatusCode: 200
       OperationName: getHash
       RequestParameters:
         method.request.querystring.table_name: True
         method.request.querystring.hash: True
+
+  ApiGetHashCORSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ResourceId:
+        Ref: ApiHashResource
+      RestApiId:
+        Ref: RestApi
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            StatusCode: 200
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: 200
 
   getHashInvokePermissions:
     Type: AWS::Lambda::Permission
