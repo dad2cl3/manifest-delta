@@ -1,0 +1,18 @@
+{
+  "Database" : {
+    "Host" : "YOUR-DATABASE-HOST",
+    "Port" : YOUR-DATABASE-PORT,
+    "Database" : "YOUR-DATABASE-NAME",
+    "User" : "YOUR-DATABASE-USER",
+    "Password" : "YOUR-DATABASE-USER-PASSWORD"
+  },
+  "SQL" : {
+    "current_version" : "SELECT manifest_id, version FROM manifest.t_manifest_version WHERE current = TRUE",
+    "changes" : "SELECT * FROM manifest.fn_get_changes({0}) AS t(table_name VARCHAR, inserts BIGINT, updates BIGINT, deletes BIGINT)",
+    "hashes" : "SELECT COALESCE(tm.json->>'hash', tm.json->>'statId') hash FROM manifest.t_manifest tm WHERE tm.table_name = '{0}'",
+    "inserts" : " AND tm.deleted IS NULL AND tm.created_by = {0} ORDER BY hash",
+    "updates" : " AND tm.deleted IS NULL AND tm.last_updated_by = {0} AND tm.last_updated_by != tm.created_by ORDER BY hash",
+    "deletes" : " AND tm.deleted_by = {0} ORDER BY hash",
+    "hash" : "SELECT json FROM manifest.t_manifest tm WHERE tm.table_name = '{0}' AND (tm.json->>'hash' = '{1}' OR tm.json->>'statId' = '{1}')"
+  }
+}
